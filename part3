@@ -1,0 +1,53 @@
+using UnityEngine;
+
+public class PlayerInteraction : MonoBehaviour
+{
+    [Header("Interaction Settings")]
+    [SerializeField] private float interactionRadius = 2f;
+    [SerializeField] private LayerMask interactableLayer; // Optional: Optimize by setting this to an 'Interactable' layer
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            PerformInteraction();
+        }
+    }
+
+    private void PerformInteraction()
+    {
+        // 1. Scan for all 3D colliders within a sphere radius around the player
+        Collider[] collidersWithinRange = Physics.OverlapSphere(transform.position, interactionRadius, interactableLayer);
+
+        IInteractable closestInteractable = null;
+        float closestDistance = Mathf.Infinity;
+
+        // 2. Loop through everything found to find the closest valid interactable
+        foreach (Collider col in collidersWithinRange)
+        {
+            if (col.TryGetComponent(out IInteractable interactable))
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, col.transform.position);
+
+                if (distanceToTarget < closestDistance)
+                {
+                    closestDistance = distanceToTarget;
+                    closestInteractable = interactable;
+                }
+            }
+        }
+
+        // 3. Trigger the closest object
+        if (closestInteractable != null)
+        {
+            closestInteractable.Interact();
+        }
+    }
+
+    // Visualizes the interaction zone in the Unity Editor Scene view
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, interactionRadius);
+    }
+}
