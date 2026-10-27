@@ -1,0 +1,58 @@
+using UnityEngine;
+
+public class PlayerInteraction : MonoBehaviour
+{
+    [Header("Interaction Settings")]
+    [SerializeField] private float interactionRadius = 2f;
+    [SerializeField] private LayerMask interactableLayer;
+
+    private IInteractable closestInteractable;
+
+    void Update()
+    {
+        FindClosestInteractable();
+
+        if (Input.GetKeyDown(KeyCode.E) && closestInteractable != null)
+        {
+            closestInteractable.Interact();
+        }
+    }
+
+    private void FindClosestInteractable()
+    {
+        Collider[] collidersWithinRange = Physics.OverlapSphere(transform.position, interactionRadius, interactableLayer);
+        
+        IInteractable newClosest = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (Collider col in collidersWithinRange)
+        {
+            if (col.TryGetComponent(out IInteractable interactable))
+            {
+                float distanceToTarget = Vector3.Distance(transform.position, col.transform.position);
+                if (distanceToTarget < closestDistance)
+                {
+                    closestDistance = distanceToTarget;
+                    newClosest = interactable;
+                }
+            }
+        }
+
+        // Handle swapping prompts smoothly
+        if (newClosest != closestInteractable)
+        {
+            // Hide the old one if we walk away
+            if (closestInteractable != null) closestInteractable.HidePrompt();
+            
+            // Assign and show the new one
+            closestInteractable = newClosest;
+            if (closestInteractable != null) closestInteractable.ShowPrompt();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, interactionRadius);
+    }
+}
